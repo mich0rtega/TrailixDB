@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrailixDB</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════
+   TOKENS
+══════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg:         #0d0d14;
+  --bg2:        #13131e;
+  --surface:    #1a1a2a;
+  --surface2:   #22223a;
+  --border:     #2e2e4a;
+  --border2:    #3a3a5a;
+  --text:       #e4e4f0;
+  --text2:      #9090b8;
+  --accent:     #7c6fff;
+  --accent-bg:  rgba(124,111,255,.12);
+  --green:      #3ddba6;
+  --red:        #ff6b7a;
+  --yellow:     #f5c842;
+  --blue:       #5bc4f5;
+  --shadow:     0 4px 24px rgba(0,0,0,.5);
+  --pk-color:   #ff6b7a;
+  --fk-color:   #f5c842;
+  --null-color: #555580;
+  --bool-t:     #3ddba6;
+  --bool-f:     #ff6b7a;
+}
+[data-theme="light"] {
+  --bg:         #f0f0f8;
+  --bg2:        #e8e8f4;
+  --surface:    #ffffff;
+  --surface2:   #f5f5fe;
+  --border:     #d8d8ec;
+  --border2:    #c8c8e0;
+  --text:       #1a1a30;
+  --text2:      #6060a0;
+  --accent:     #5b50e0;
+  --accent-bg:  rgba(91,80,224,.08);
+  --green:      #1aa87a;
+  --red:        #e03050;
+  --yellow:     #c49200;
+  --blue:       #2095cc;
+  --shadow:     0 4px 24px rgba(0,0,0,.12);
+  --pk-color:   #e03050;
+  --fk-color:   #c49200;
+  --null-color: #b0b0cc;
+  --bool-t:     #1aa87a;
+  --bool-f:     #e03050;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-variant-ligatures: none; font-feature-settings: "liga" 0, "clig" 0, "dlig" 0; }
+html, body { height: 100%; }
+body {
+  font-family: Consolas, 'Courier New', Courier, monospace;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  transition: background .25s, color .25s;
+}
+
+/* ══════════════════════════════════════
+   TOPBAR
+══════════════════════════════════════ */
+.topbar {
+  height: 52px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  gap: 0;
+  flex-shrink: 0;
+  box-shadow: var(--shadow);
+  z-index: 10;
+}
+.logo {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.5px;
+  color: var(--text);
+  margin-right: auto;
+}
+.logo em { color: var(--accent); font-style: normal; }
+
+/* NAV PILLS */
+.nav-pills { display: flex; gap: 4px; margin-right: 16px; }
+.nav-pill {
+  padding: 5px 14px;
+  font-size: 11px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text2);
+  cursor: pointer;
+  font-family: Consolas, 'Courier New', Courier, monospace;
+  transition: all .15s;
+}
+.nav-pill:hover { color: var(--text); background: var(--surface2); }
+.nav-pill.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* THEME TOGGLE */
+.theme-btn {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ══════════════════════════════════════
+   LAYOUT
+══════════════════════════════════════ */
+.workspace {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ══════════════════════════════════════
+   SIDEBAR — only shown in DATA view
+══════════════════════════════════════ */
+.sidebar {
+  width: 200px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 0;
+}
+.sidebar-label {
+  padding: 0 14px 8px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+.tbl-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  color: var(--text2);
+  font-family: Consolas, 'Courier New', Courier, monospace;
+  font-size: 11.5px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all .12s;
+}
+.tbl-btn:hover { color: var(--text); background: var(--surface2); }
+.tbl-btn.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-bg); }
+.tbl-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.tbl-count {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--text2);
+  background: var(--surface2);
+  padding: 1px 5px;
+  border-radius: 10px;
+}
+
+/* ══════════════════════════════════════
+   CONTENT PANEL
+══════════════════════════════════════ */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* SQL BAR */
+.sql-bar {
+  padding: 10px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.sql-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: Consolas, 'Courier New', Courier, monospace;
+  font-size: 12px;
+  padding: 7px 12px;
+  border-radius: 7px;
+  outline: none;
+  transition: border .2s;
+}
+.sql-input:focus { border-color: var(--accent); }
+.run-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+}
+.run-btn:hover { opacity: .88; transform: translateY(-1px); }
+.run-btn:active { transform: translateY(0); }
+
+/* SUGGESTIONS */
+.sugs {
+  padding: 7px 16px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sug {
+  font-size: 10px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: none;
+  color: var(--text2);
+  cursor: pointer;
+  font-family: Consolas, 'Courier New', Courier, monospace;
+  transition: all .12s;
+}
+.sug:hover { border-color: var(--accent); color: var(--accent); }
+
+/* DATA TABLE */
+.table-scroll { flex: 1; overflow: auto; padding: 16px; }
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.grid thead th {
+  background: var(--surface2);
+  color: var(--accent);
+  padding: 9px 13px;
+  text-align: left;
+  font-weight: 500;
+  border-bottom: 2px solid var(--accent);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.grid thead th .t { font-size: 9px; color: var(--text2); margin-left: 4px; font-weight: 400; }
+.grid thead th .badge-pk { font-size: 8px; padding: 1px 4px; border-radius: 3px; background: rgba(255,107,122,.15); color: var(--pk-color); border: 1px solid var(--pk-color); margin-left: 3px; }
+.grid thead th .badge-fk { font-size: 8px; padding: 1px 4px; border-radius: 3px; background: rgba(245,200,66,.12); color: var(--fk-color); border: 1px solid var(--fk-color); margin-left: 3px; }
+.grid tbody td {
+  padding: 7px 13px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.grid tbody tr:hover td { background: var(--accent-bg); }
+.v-null { color: var(--null-color); font-style: italic; }
+.v-pk { color: var(--pk-color); font-weight: 700; }
+.v-fk { color: var(--fk-color); }
+.v-true { color: var(--bool-t); }
+.v-false { color: var(--bool-f); }
+.v-url { color: var(--blue); text-decoration: underline; cursor: pointer; max-width:180px; display:inline-block; overflow:hidden; text-overflow:ellipsis; }
+
+/* STATUS BAR */
+.statusbar {
+  padding: 6px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  gap: 20px;
+  font-size: 10px;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+.statusbar span { color: var(--accent); }
+
+/* ══════════════════════════════════════
+   DIAGRAM VIEW (replaces Schema + ERD)
+══════════════════════════════════════ */
+.diagram-view {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+.diagram-view.visible { display: flex; }
+.diagram-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text2);
+}
+.diagram-toolbar button {
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: Consolas, 'Courier New', Courier, monospace;
+  transition: all .12s;
+}
+.diagram-toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+#diagramCanvas {
+  flex: 1;
+  cursor: grab;
+  display: block;
+}
+#diagramCanvas.grabbing { cursor: grabbing; }
+
+/* ══════════════════════════════════════
+   DATA PANEL (hidden when schema/erd)
+══════════════════════════════════════ */
+.data-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">Trailix<em>DB</em></div>
+  <nav class="nav-pills">
+    <button class="nav-pill active" onclick="goView('data')">📊 Datos</button>
+    <button class="nav-pill" onclick="goView('diagram')">🔗 Diagrama</button>
+  </nav>
+  <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+</div>
+
+<div class="workspace" id="workspace">
+
+  <!-- SIDEBAR (data view only) -->
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <!-- CONTENT -->
+  <div class="content" id="content">
+
+    <!-- DATA PANEL -->
+    <div class="data-panel" id="dataPanel">
+      <div class="sql-bar">
+        <input class="sql-input" id="sqlInput" value="SELECT * FROM users" />
+        <button class="run-btn" onclick="runQuery()">▶ Ejecutar</button>
+      </div>
+      <div class="sugs" id="sugs"></div>
+      <div class="table-scroll">
+        <table class="grid" id="grid"><thead></thead><tbody></tbody></table>
+      </div>
+      <div class="statusbar">
+        <div>tabla: <span id="sTbl">–</span></div>
+        <div>filas: <span id="sRows">–</span></div>
+        <div>cols: <span id="sCols">–</span></div>
+      </div>
+    </div>
+
+    <!-- DIAGRAM VIEW (Schema + ERD unified) -->
+    <div class="diagram-view" id="diagramView">
+      <div class="diagram-toolbar">
+        <span>🔗 Diagrama de relaciones</span>
+        <span style="margin-left:auto;font-size:10px">Arrastra las tablas · Scroll para zoom</span>
+        <button onclick="resetDiagram()">↺ Reset</button>
+        <button onclick="fitDiagram()">⊡ Fit</button>
+      </div>
+      <canvas id="diagramCanvas"></canvas>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════
+// DATABASE
+// ════════════════════════════════
+const DB = {
+
+roles: {
+  cols: [{n:'id',t:'int',pk:1},{n:'name',t:'varchar'}],
+  rows: [
+    {id:1,name:'admin'},
+    {id:2,name:'user'},
+  ]
+},
+
+plans: {
+  cols: [{n:'id',t:'int',pk:1},{n:'name',t:'varchar'},{n:'price',t:'decimal'}],
+  rows: [
+    {id:1,name:'Free',    price:0.00},
+    {id:2,name:'Basic',   price:4.99},
+    {id:3,name:'Premium', price:9.99},
+  ]
+},
+
+users: {
+  cols: [
+    {n:'id',t:'int',pk:1},{n:'name',t:'varchar'},{n:'email',t:'varchar'},
+    {n:'password_hash',t:'varchar'},{n:'active',t:'boolean'},{n:'birth_date',t:'date'},
+    {n:'role_id',t:'int',fk:'roles.id'},{n:'photo',t:'varchar'},
+    {n:'created_at',t:'timestamp'},{n:'updated_at',t:'timestamp'},{n:'deleted_at',t:'timestamp'}
+  ],
+  rows: [
+    {id:1,name:'Carlos Mendoza',email:'carlos@mail.com',password_hash:'$2b$10$abc123',active:true,birth_date:'1990-05-15',role_id:1,photo:'avatar1.jpg',created_at:'2024-01-10 09:00:00',updated_at:'2024-11-01 12:00:00',deleted_at:null},
+    {id:2,name:'Ana Martínez',email:'ana@mail.com',password_hash:'$2b$10$def456',active:true,birth_date:'1995-08-22',role_id:2,photo:'avatar2.jpg',created_at:'2024-02-14 10:30:00',updated_at:'2024-10-20 15:00:00',deleted_at:null},
+    {id:3,name:'Luis Pérez',email:'luis@mail.com',password_hash:'$2b$10$ghi789',active:false,birth_date:'1988-03-10',role_id:2,photo:null,created_at:'2024-03-01 08:00:00',updated_at:'2024-09-15 11:00:00',deleted_at:'2024-10-01 00:00:00'},
+    {id:4,name:'Sofía Torres',email:'sofia@mail.com',password_hash:'$2b$10$jkl012',active:true,birth_date:'2000-12-05',role_id:2,photo:'avatar4.jpg',created_at:'2024-04-20 14:00:00',updated_at:'2024-11-05 09:30:00',deleted_at:null},
+    {id:5,name:'Marco Ruiz',email:'marco@mail.com',password_hash:'$2b$10$mno345',active:true,birth_date:'1993-07-18',role_id:2,photo:'avatar5.jpg',created_at:'2024-05-05 11:00:00',updated_at:'2024-11-10 16:00:00',deleted_at:null},
+  ]
+},
+
+subscriptions: {
+  cols: [
+    {n:'id',t:'int',pk:1},{n:'type',t:'varchar'},{n:'start_date',t:'date'},
+    {n:'end_date',t:'date'},{n:'user_id',t:'int',fk:'users.id'},{n:'plan_id',t:'int',fk:'plans.id'},
+    {n:'renewal_date',t:'date'},{n:'payment_method',t:'varchar'},
+    {n:'created_at',t:'timestamp'},{n:'updated_at',t:'timestamp'},{n:'deleted_at',t:'timestamp'}
+  ],
+  rows: [
+    {id:1,type:'Premium',start_date:'2024-01-10',end_date:'2025-01-10',user_id:1,plan_id:3,renewal_date:'2025-01-10',payment_method:'credit_card',created_at:'2024-01-10 09:05:00',updated_at:'2024-11-01 12:00:00',deleted_at:null},
+    {id:2,type:'Basic',start_date:'2024-02-14',end_date:'2025-02-14',user_id:2,plan_id:2,renewal_date:'2025-02-14',payment_method:'paypal',created_at:'2024-02-14 10:35:00',updated_at:'2024-10-20 15:00:00',deleted_at:null},
+    {id:3,type:'Free',start_date:'2024-03-01',end_date:'2024-04-01',user_id:3,plan_id:1,renewal_date:null,payment_method:'debit_card',created_at:'2024-03-01 08:05:00',updated_at:'2024-04-01 00:00:00',deleted_at:'2024-04-01 00:00:00'},
+    {id:4,type:'Premium',start_date:'2024-04-20',end_date:'2025-04-20',user_id:4,plan_id:3,renewal_date:'2025-04-20',payment_method:'credit_card',created_at:'2024-04-20 14:05:00',updated_at:'2024-11-05 09:30:00',deleted_at:null},
+    {id:5,type:'Basic',start_date:'2024-05-05',end_date:'2025-05-05',user_id:5,plan_id:2,renewal_date:'2025-05-05',payment_method:'paypal',created_at:'2024-05-05 11:05:00',updated_at:'2024-11-10 16:00:00',deleted_at:null},
+  ]
+},
+
+payments: {
+  cols: [
+    {n:'id',t:'int',pk:1},{n:'subscription_id',t:'int',fk:'subscriptions.id'},
+    {n:'user_id',t:'int',fk:'users.id'},{n:'amount',t:'decimal'},
+    {n:'payment_date',t:'timestamp'},{n:'method',t:'varchar'},{n:'status',t:'varchar'}
+  ],
+  rows: [
+    {id:1,subscription_id:1,user_id:1,amount:9.99,payment_date:'2024-01-10 09:10:00',method:'credit_card',status:'completed'},
+    {id:2,subscription_id:2,user_id:2,amount:4.99,payment_date:'2024-02-14 10:40:00',method:'paypal',status:'completed'},
+    {id:3,subscription_id:3,user_id:3,amount:0.00,payment_date:'2024-03-01 08:10:00',method:'debit_card',status:'completed'},
+    {id:4,subscription_id:4,user_id:4,amount:9.99,payment_date:'2024-04-20 14:10:00',method:'credit_card',status:'completed'},
+    {id:5,subscription_id:5,user_id:5,amount:4.99,payment_date:'2024-05-05 11:10:00',method:'paypal',status:'completed'},
+    {id:6,subscription_id:1,user_id:1,amount:9.99,payment_date:'2024-02-10 09:10:00',method:'credit_card',status:'completed'},
+    {id:7,subscription_id:2,user_id:2,amount:4.99,payment_date:'2024-03-14 10:40:00',method:'paypal',status:'failed'},
+  ]
+},
+
+genres: {
+  cols: [{n:'id',t:'int',pk:1},{n:'name',t:'varchar'}],
+  rows: [
+    {id:1,name:'Acción'},
+    {id:2,name:'Drama'},
+    {id:3,name:'Comedia'},
+    {id:4,name:'Terror'},
+    {id:5,name:'Ciencia Ficción'},
+    {id:6,name:'Animación'},
+    {id:7,name:'Aventura'},
+  ]
+},
+
+movies: {
+  cols: [
+    {n:'id',t:'int',pk:1},{n:'title',t:'varchar'},{n:'type_id',t:'int'},
+    {n:'release_year',t:'int'},{n:'duration',t:'int'},{n:'description',t:'varchar'},
+    {n:'poster',t:'varchar'},{n:'rating',t:'decimal'},{n:'is_available',t:'boolean'},
+    {n:'created_by',t:'int',fk:'users.id'},{n:'updated_by',t:'int',fk:'users.id'},{n:'url',t:'varchar'}
+  ],
+  rows: [
+    {id:1,title:'Minions - Stuart & Dave',type_id:1,release_year:2015,duration:91,description:'Los traviesosos minions en una nueva aventura de Gru.',poster:'minions.jpg',rating:6.4,is_available:true,created_by:1,updated_by:1,url:'https://www.youtube.com/watch?v=yDsMZn3olFw'},
+    {id:2,title:'Avengers: Infinity War',type_id:1,release_year:2018,duration:149,description:'Los Vengadores se unen para detener a Thanos.',poster:'infinitywar.jpg',rating:8.4,is_available:true,created_by:1,updated_by:5,url:'https://www.youtube.com/watch?v=6ZfuNTqbHE8'},
+    {id:3,title:'Barbie',type_id:1,release_year:2023,duration:114,description:'Barbie y Ken viajan al mundo real.',poster:'barbie.jpg',rating:6.9,is_available:true,created_by:5,updated_by:5,url:'https://www.youtube.com/watch?v=pBk4NYhWNMM'},
+    {id:4,title:'El Conjuro',type_id:1,release_year:2013,duration:112,description:'Los Warren investigan una casa aterrorizada.',poster:'conjuro.jpg',rating:7.5,is_available:true,created_by:1,updated_by:1,url:'https://www.youtube.com/watch?v=wE59Ajd_v9M'},
+  ]
+},
+
+movie_genres: {
+  cols: [{n:'movie_id',t:'int',fk:'movies.id'},{n:'genre_id',t:'int',fk:'genres.id'}],
+  rows: [
+    {movie_id:1,genre_id:6},{movie_id:1,genre_id:3},{movie_id:1,genre_id:7},
+    {movie_id:2,genre_id:1},{movie_id:2,genre_id:5},{movie_id:2,genre_id:7},
+    {movie_id:3,genre_id:3},{movie_id:3,genre_id:7},
+    {movie_id:4,genre_id:4},{movie_id:4,genre_id:2},
+  ]
+},
+
+watch_progress: {
+  cols: [
+    {n:'id',t:'int',pk:1},{n:'user_id',t:'int',fk:'users.id'},
+    {n:'movie_id',t:'int',fk:'movies.id'},{n:'progress',t:'int'},
+    {n:'duration_seconds',t:'int'},{n:'last_watched_at',t:'timestamp'},
+    {n:'completed',t:'boolean'},{n:'device',t:'varchar'}
+  ],
+  rows: [
+    {id:1,user_id:1,movie_id:2,progress:100,duration_seconds:8940,last_watched_at:'2024-10-20 22:30:00',completed:true,device:'smart_tv'},
+    {id:2,user_id:2,movie_id:3,progress:60,duration_seconds:6840,last_watched_at:'2024-11-01 19:00:00',completed:false,device:'mobile'},
+    {id:3,user_id:2,movie_id:2,progress:100,duration_seconds:8940,last_watched_at:'2024-09-28 20:00:00',completed:true,device:'tablet'},
+    {id:4,user_id:4,movie_id:1,progress:100,duration_seconds:5460,last_watched_at:'2024-11-05 18:00:00',completed:true,device:'smart_tv'},
+    {id:5,user_id:5,movie_id:4,progress:45,duration_seconds:6720,last_watched_at:'2024-11-10 20:30:00',completed:false,device:'laptop'},
+    {id:6,user_id:1,movie_id:4,progress:100,duration_seconds:6720,last_watched_at:'2024-08-20 21:00:00',completed:true,device:'smart_tv'},
+  ]
+},
+
+user_ratings: {
+  cols: [
+    {n:'user_id',t:'int',fk:'users.id'},{n:'movie_id',t:'int',fk:'movies.id'},
+    {n:'rating',t:'int'},{n:'created_at',t:'timestamp'}
+  ],
+  rows: [
+    {user_id:1,movie_id:2,rating:9,created_at:'2024-10-21 09:00:00'},
+    {user_id:2,movie_id:3,rating:7,created_at:'2024-11-02 12:00:00'},
+    {user_id:2,movie_id:2,rating:9,created_at:'2024-09-29 11:00:00'},
+    {user_id:4,movie_id:1,rating:8,created_at:'2024-11-06 09:00:00'},
+    {user_id:5,movie_id:4,rating:8,created_at:'2024-11-11 10:00:00'},
+    {user_id:1,movie_id:4,rating:9,created_at:'2024-08-21 08:00:00'},
+  ]
+},
+
+user_watchlist: {
+  cols: [
+    {n:'user_id',t:'int',fk:'users.id'},{n:'movie_id',t:'int',fk:'movies.id'},
+    {n:'added_at',t:'timestamp'}
+  ],
+  rows: [
+    {user_id:1,movie_id:3,added_at:'2024-11-01 10:00:00'},
+    {user_id:2,movie_id:1,added_at:'2024-10-25 14:00:00'},
+    {user_id:2,movie_id:4,added_at:'2024-11-05 16:00:00'},
+    {user_id:4,movie_id:2,added_at:'2024-11-06 18:00:00'},
+    {user_id:5,movie_id:3,added_at:'2024-11-10 20:00:00'},
+    {user_id:5,movie_id:1,added_at:'2024-11-12 09:00:00'},
+  ]
+}
+
+};
+
+// ════════════════════════════════
+// TABLE COLORS
+// ════════════════════════════════
+const CLR = {
+  roles:'#7c6fff', plans:'#3ddba6', users:'#ff6b7a', subscriptions:'#f5c842',
+  payments:'#5bc4f5', genres:'#c084fc', movies:'#f472b6', movie_genres:'#fb923c',
+  watch_progress:'#34d399', user_ratings:'#facc15', user_watchlist:'#818cf8'
+};
+
+const TBLS = Object.keys(DB);
+let curTable = 'users';
+let curView = 'data';
+
+// ════════════════════════════════
+// SIDEBAR
+// ════════════════════════════════
+function buildSidebar() {
+  const el = document.getElementById('sidebar');
+  el.innerHTML = '<div class="sidebar-label">Tablas</div>' +
+    TBLS.map(t => `
+      <button class="tbl-btn ${t===curTable?'active':''}" onclick="selectTable('${t}')">
+        <span class="tbl-dot" style="background:${CLR[t]}"></span>
+        ${t}
+        <span class="tbl-count">${DB[t].rows.length}</span>
+      </button>
+    `).join('');
+}
+
+function selectTable(t) {
+  curTable = t;
+  buildSidebar();
+  document.getElementById('sqlInput').value = `SELECT * FROM ${t}`;
+  renderTable(t, DB[t].rows);
+  buildSugs(t);
+}
+
+// ════════════════════════════════
+// RENDER TABLE
+// ════════════════════════════════
+function renderTable(name, rows) {
+  const cols = DB[name].cols;
+  const thead = document.querySelector('#grid thead');
+  const tbody = document.querySelector('#grid tbody');
+
+  thead.innerHTML = '<tr>' + cols.map(c => `
+    <th>${c.n}<span class="t">${c.t}</span>${c.pk?'<span class="badge-pk">PK</span>':''}${c.fk?'<span class="badge-fk">FK</span>':''}</th>
+  `).join('') + '</tr>';
+
+  tbody.innerHTML = rows.map(row =>
+    '<tr>' + cols.map(c => {
+      const v = row[c.n];
+      if (v===null||v===undefined) return '<td class="v-null">NULL</td>';
+      if (c.pk) return `<td class="v-pk">${v}</td>`;
+      if (c.fk) return `<td class="v-fk">${v}</td>`;
+      if (v===true) return '<td class="v-true">true</td>';
+      if (v===false) return '<td class="v-false">false</td>';
+      if (typeof v==='string' && v.startsWith('http'))
+        return `<td><a class="v-url" href="${v}" target="_blank">${v}</a></td>`;
+      return `<td>${v}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+
+  document.getElementById('sTbl').textContent = name;
+  document.getElementById('sRows').textContent = rows.length;
+  document.getElementById('sCols').textContent = cols.length;
+}
+
+// ════════════════════════════════
+// SQL RUNNER
+// ════════════════════════════════
+function runQuery() {
+  const raw = document.getElementById('sqlInput').value.trim().toLowerCase();
+  const fm = raw.match(/from\s+(\w+)/);
+  if (!fm) { alert('Falta cláusula FROM'); return; }
+  const tbl = fm[1];
+  if (!DB[tbl]) { alert(`Tabla "${tbl}" no existe`); return; }
+
+  let rows = [...DB[tbl].rows];
+
+  // WHERE (simple)
+  const wm = raw.match(/where\s+(\w+)\s*(=|!=|>=|<=|>|<)\s*['"]?([^'"order\slimit]+?)['"]?(?:\s+order|\s+limit|$)/);
+  if (wm) {
+    const [,col,op,val] = wm;
+    const v = val.trim();
+    rows = rows.filter(r => {
+      const rv = r[col];
+      const svr = String(rv).toLowerCase();
+      if (op==='=')  return svr===v || rv===true&&v==='true' || rv===false&&v==='false';
+      if (op==='!=') return svr!==v;
+      if (op==='>') return Number(rv) > Number(v);
+      if (op==='<') return Number(rv) < Number(v);
+      if (op==='>=') return Number(rv) >= Number(v);
+      if (op==='<=') return Number(rv) <= Number(v);
+    });
+  }
+
+  // ORDER BY
+  const om = raw.match(/order by\s+(\w+)(\s+desc)?/);
+  if (om) {
+    const [,col,desc] = om;
+    rows.sort((a,b) => {
+      if (a[col] < b[col]) return desc ? 1 : -1;
+      if (a[col] > b[col]) return desc ? -1 : 1;
+      return 0;
+    });
+  }
+
+  // LIMIT
+  const lm = raw.match(/limit\s+(\d+)/);
+  if (lm) rows = rows.slice(0, parseInt(lm[1]));
+
+  curTable = tbl;
+  buildSidebar();
+  renderTable(tbl, rows);
+  buildSugs(tbl);
+
+  if (curView !== 'data') goView('data');
+}
+
+// ════════════════════════════════
+// SUGGESTIONS
+// ════════════════════════════════
+const SUGS = {
+  users: ['SELECT * FROM users WHERE active = true','SELECT * FROM users ORDER BY created_at desc','SELECT * FROM users WHERE role_id = 1'],
+  movies: ['SELECT * FROM movies WHERE is_available = true','SELECT * FROM movies ORDER BY rating desc','SELECT * FROM movies WHERE release_year > 2020'],
+  payments: ['SELECT * FROM payments WHERE status = completed','SELECT * FROM payments ORDER BY amount desc','SELECT * FROM payments WHERE user_id = 1'],
+  subscriptions: ['SELECT * FROM subscriptions WHERE plan_id = 3','SELECT * FROM subscriptions ORDER BY start_date desc'],
+  watch_progress: ['SELECT * FROM watch_progress WHERE completed = true','SELECT * FROM watch_progress ORDER BY last_watched_at desc'],
+};
+
+function buildSugs(t) {
+  const list = SUGS[t] || [`SELECT * FROM ${t}`, `SELECT * FROM ${t} LIMIT 3`];
+  document.getElementById('sugs').innerHTML = list.map(q =>
+    `<button class="sug" onclick="setSql('${q}')">${q}</button>`
+  ).join('');
+}
+
+function setSql(q) {
+  document.getElementById('sqlInput').value = q;
+  runQuery();
+}
+
+// ════════════════════════════════
+// VIEW SWITCHING
+// ════════════════════════════════
+function goView(v) {
+  curView = v;
+  document.querySelectorAll('.nav-pill').forEach(p => {
+    const matches = (v==='data' && p.textContent.includes('Datos')) ||
+                    (v==='diagram' && p.textContent.includes('Diagrama'));
+    p.classList.toggle('active', matches);
+  });
+  document.getElementById('sidebar').style.display = v==='data' ? '' : 'none';
+  document.getElementById('dataPanel').style.display = v==='data' ? 'flex' : 'none';
+  document.getElementById('diagramView').classList.toggle('visible', v==='diagram');
+  if (v==='diagram') initDiagram();
+}
+
+// ════════════════════════════════
+// CANVAS ERD DIAGRAM
+// ════════════════════════════════
+
+// Layout positions for each table
+const LAYOUT = {
+  roles:          { x: 60,   y: 60   },
+  plans:          { x: 60,   y: 200  },
+  users:          { x: 320,  y: 60   },
+  subscriptions:  { x: 620,  y: 60   },
+  payments:       { x: 940,  y: 60   },
+  genres:         { x: 60,   y: 420  },
+  movies:         { x: 320,  y: 360  },
+  movie_genres:   { x: 620,  y: 420  },
+  watch_progress: { x: 940,  y: 300  },
+  user_ratings:   { x: 940,  y: 560  },
+  user_watchlist: { x: 620,  y: 600  },
+};
+
+const RELATIONS = [
+  { from: 'users',         fromCol: 'role_id',         to: 'roles',         toCol: 'id' },
+  { from: 'subscriptions', fromCol: 'user_id',         to: 'users',         toCol: 'id' },
+  { from: 'subscriptions', fromCol: 'plan_id',         to: 'plans',         toCol: 'id' },
+  { from: 'payments',      fromCol: 'subscription_id', to: 'subscriptions', toCol: 'id' },
+  { from: 'payments',      fromCol: 'user_id',         to: 'users',         toCol: 'id' },
+  { from: 'movies',        fromCol: 'created_by',      to: 'users',         toCol: 'id' },
+  { from: 'movie_genres',  fromCol: 'movie_id',        to: 'movies',        toCol: 'id' },
+  { from: 'movie_genres',  fromCol: 'genre_id',        to: 'genres',        toCol: 'id' },
+  { from: 'watch_progress',fromCol: 'user_id',         to: 'users',         toCol: 'id' },
+  { from: 'watch_progress',fromCol: 'movie_id',        to: 'movies',        toCol: 'id' },
+  { from: 'user_ratings',  fromCol: 'user_id',         to: 'users',         toCol: 'id' },
+  { from: 'user_ratings',  fromCol: 'movie_id',        to: 'movies',        toCol: 'id' },
+  { from: 'user_watchlist',fromCol: 'user_id',         to: 'users',         toCol: 'id' },
+  { from: 'user_watchlist',fromCol: 'movie_id',        to: 'movies',        toCol: 'id' },
+];
+
+// Diagram state
+let dPos = {}; // table positions (canvas coords)
+let dScale = 1;
+let dOffX = 0, dOffY = 0;
+let dDragging = null; // { type:'table'|'pan', tbl, mx, my, ox, oy }
+let dInited = false;
+let dHighlight = null; // hovered table name
+
+const COL_H = 22;
+const HEAD_H = 30;
+const TBL_W = 190;
+
+function tblHeight(tbl) {
+  return HEAD_H + DB[tbl].cols.length * COL_H + 6;
+}
+
+function initDiagram() {
+  const canvas = document.getElementById('diagramCanvas');
+  if (!dInited) {
+    // copy layout
+    TBLS.forEach(t => { dPos[t] = { ...LAYOUT[t] }; });
+    dInited = true;
+    attachDiagramEvents(canvas);
+  }
+  resizeCanvas();
+  drawDiagram();
+}
+
+function resizeCanvas() {
+  const canvas = document.getElementById('diagramCanvas');
+  const parent = canvas.parentElement;
+  canvas.width = parent.clientWidth;
+  canvas.height = parent.clientHeight;
+}
+
+function getThemeColors() {
+  const s = getComputedStyle(document.documentElement);
+  return {
+    bg:      s.getPropertyValue('--bg').trim()      || '#0d0d14',
+    surface: s.getPropertyValue('--surface').trim() || '#1a1a2a',
+    surface2:s.getPropertyValue('--surface2').trim()|| '#22223a',
+    border:  s.getPropertyValue('--border').trim()  || '#2e2e4a',
+    text:    s.getPropertyValue('--text').trim()     || '#e4e4f0',
+    text2:   s.getPropertyValue('--text2').trim()    || '#9090b8',
+    accent:  s.getPropertyValue('--accent').trim()   || '#7c6fff',
+    pk:      s.getPropertyValue('--pk-color').trim() || '#ff6b7a',
+    fk:      s.getPropertyValue('--fk-color').trim() || '#f5c842',
+  };
+}
+
+function drawDiagram() {
+  const canvas = document.getElementById('diagramCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const C = getThemeColors();
+
+  ctx.clearRect(0, 0, W, H);
+
+  // background
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // dot grid
+  ctx.fillStyle = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)';
+  const gs = 28 * dScale;
+  const ox = ((dOffX % gs) + gs) % gs;
+  const oy = ((dOffY % gs) + gs) % gs;
+  for (let x = ox; x < W; x += gs)
+    for (let y = oy; y < H; y += gs) {
+      ctx.beginPath();
+      ctx.arc(x, y, 1.2, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+  ctx.save();
+  ctx.translate(dOffX, dOffY);
+  ctx.scale(dScale, dScale);
+
+  // Draw relations
+  RELATIONS.forEach(rel => {
+    drawRelation(ctx, rel, C);
+  });
+
+  // Draw tables
+  TBLS.forEach(t => {
+    drawTable(ctx, t, C);
+  });
+
+  ctx.restore();
+}
+
+function worldToCanvas(wx, wy) {
+  return { x: wx * dScale + dOffX, y: wy * dScale + dOffY };
+}
+
+function colCenterY(tbl, colName) {
+  const cols = DB[tbl].cols;
+  const idx = cols.findIndex(c => c.n === colName);
+  return dPos[tbl].y + HEAD_H + idx * COL_H + COL_H / 2 + 3;
+}
+
+function drawRelation(ctx, rel, C) {
+  const fp = dPos[rel.from];
+  const tp = dPos[rel.to];
+  if (!fp || !tp) return;
+
+  const fy = colCenterY(rel.from, rel.fromCol);
+  const ty = colCenterY(rel.to, rel.toCol);
+
+  // Determine which side to connect from/to
+  const fcx = fp.x + TBL_W / 2;
+  const tcx = tp.x + TBL_W / 2;
+
+  let fx, tx2;
+  if (fcx < tcx) {
+    fx = fp.x + TBL_W; // right side of from
+    tx2 = tp.x;         // left side of to
+  } else {
+    fx = fp.x;           // left side of from
+    tx2 = tp.x + TBL_W; // right side of to
+  }
+
+  const isHighlighted = dHighlight === rel.from || dHighlight === rel.to;
+  const relColor = isHighlighted ? C.accent : (dark ? 'rgba(124,111,255,0.35)' : 'rgba(91,80,224,0.25)');
+
+  ctx.save();
+  ctx.strokeStyle = relColor;
+  ctx.lineWidth = isHighlighted ? 1.8 : 1.2;
+  ctx.setLineDash(isHighlighted ? [] : [5, 4]);
+
+  const cpOffset = Math.abs(fx - tx2) * 0.45 + 30;
+  ctx.beginPath();
+  ctx.moveTo(fx, fy);
+  ctx.bezierCurveTo(
+    fx + (fcx < tcx ? cpOffset : -cpOffset), fy,
+    tx2 + (fcx < tcx ? -cpOffset : cpOffset), ty,
+    tx2, ty
+  );
+  ctx.stroke();
+
+  // Arrow at destination
+  ctx.setLineDash([]);
+  ctx.fillStyle = relColor;
+  const arrowDir = fcx < tcx ? -1 : 1;
+  ctx.beginPath();
+  ctx.moveTo(tx2, ty);
+  ctx.lineTo(tx2 + arrowDir * 8, ty - 4);
+  ctx.lineTo(tx2 + arrowDir * 8, ty + 4);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawTable(ctx, tbl, C) {
+  const pos = dPos[tbl];
+  const cols = DB[tbl].cols;
+  const h = tblHeight(tbl);
+  const color = CLR[tbl];
+  const isHovered = dHighlight === tbl;
+
+  ctx.save();
+
+  // Shadow
+  ctx.shadowColor = isHovered ? color + '66' : 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur = isHovered ? 18 : 8;
+
+  // Body background
+  ctx.fillStyle = C.surface;
+  roundRect(ctx, pos.x, pos.y, TBL_W, h, 8);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Border
+  ctx.strokeStyle = isHovered ? color : C.border;
+  ctx.lineWidth = isHovered ? 2 : 1;
+  roundRect(ctx, pos.x, pos.y, TBL_W, h, 8);
+  ctx.stroke();
+
+  // Header
+  ctx.fillStyle = color;
+  roundRectTop(ctx, pos.x, pos.y, TBL_W, HEAD_H, 8);
+  ctx.fill();
+
+  // Header text
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 12px Consolas, monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(tbl, pos.x + 10, pos.y + 19);
+
+  // Row count badge
+  const cnt = '' + DB[tbl].rows.length + ' rows';
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = '9px Consolas, monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(cnt, pos.x + TBL_W - 8, pos.y + 19);
+
+  // Columns
+  cols.forEach((col, i) => {
+    const cy = pos.y + HEAD_H + i * COL_H;
+    const isLast = i === cols.length - 1;
+
+    // Row separator
+    if (i > 0) {
+      ctx.strokeStyle = C.border;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(pos.x + 1, cy);
+      ctx.lineTo(pos.x + TBL_W - 1, cy);
+      ctx.stroke();
+    }
+
+    // Row bg on hover alternating
+    if (i % 2 === 0) {
+      ctx.fillStyle = dark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)';
+      ctx.fillRect(pos.x + 1, cy, TBL_W - 2, COL_H);
+    }
+
+    // Icon on left: small symbol for PK or FK
+    ctx.font = '10px Consolas, monospace';
+    ctx.textAlign = 'left';
+    if (col.pk) {
+      ctx.fillStyle = C.pk;
+      ctx.fillText('PK', pos.x + 8, cy + 13);
+    } else if (col.fk) {
+      ctx.fillStyle = C.fk;
+      ctx.fillText('FK', pos.x + 8, cy + 13);
+    }
+
+    // Col name — always starts at fixed offset, never overlaps badge
+    const nameX = (col.pk || col.fk) ? pos.x + 34 : pos.x + 10;
+    ctx.font = '11px Consolas, monospace';
+    ctx.textAlign = 'left';
+    if (col.pk) ctx.fillStyle = C.pk;
+    else if (col.fk) ctx.fillStyle = C.fk;
+    else ctx.fillStyle = C.text;
+    ctx.fillText(col.n, nameX, cy + 14);
+
+    // Type (right aligned)
+    ctx.font = '10px Consolas, monospace';
+    ctx.fillStyle = C.text2;
+    ctx.textAlign = 'right';
+    ctx.fillText(col.t, pos.x + TBL_W - 8, cy + 14);
+  });
+
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.arcTo(x+w, y, x+w, y+r, r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+  ctx.lineTo(x+r, y+h);
+  ctx.arcTo(x, y+h, x, y+h-r, r);
+  ctx.lineTo(x, y+r);
+  ctx.arcTo(x, y, x+r, y, r);
+  ctx.closePath();
+}
+
+function roundRectTop(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.arcTo(x+w, y, x+w, y+r, r);
+  ctx.lineTo(x+w, y+h);
+  ctx.lineTo(x, y+h);
+  ctx.lineTo(x, y+r);
+  ctx.arcTo(x, y, x+r, y, r);
+  ctx.closePath();
+}
+
+function canvasToWorld(cx, cy) {
+  return { x: (cx - dOffX) / dScale, y: (cy - dOffY) / dScale };
+}
+
+function hitTable(wx, wy) {
+  // reverse order so top tables get priority
+  for (let i = TBLS.length-1; i >= 0; i--) {
+    const t = TBLS[i];
+    const p = dPos[t];
+    if (wx >= p.x && wx <= p.x + TBL_W && wy >= p.y && wy <= p.y + tblHeight(t)) return t;
+  }
+  return null;
+}
+
+function attachDiagramEvents(canvas) {
+  let panStart = null;
+
+  canvas.addEventListener('mousedown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const w = canvasToWorld(cx, cy);
+    const hit = hitTable(w.x, w.y);
+
+    if (hit) {
+      dDragging = { type: 'table', tbl: hit, mx: cx, my: cy, ox: dPos[hit].x, oy: dPos[hit].y };
+    } else {
+      dDragging = { type: 'pan', mx: cx, my: cy, ox: dOffX, oy: dOffY };
+    }
+    canvas.classList.add('grabbing');
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+
+    if (dDragging) {
+      const dx = cx - dDragging.mx;
+      const dy = cy - dDragging.my;
+      if (dDragging.type === 'table') {
+        dPos[dDragging.tbl].x = dDragging.ox + dx / dScale;
+        dPos[dDragging.tbl].y = dDragging.oy + dy / dScale;
+      } else {
+        dOffX = dDragging.ox + dx;
+        dOffY = dDragging.oy + dy;
+      }
+      drawDiagram();
+    } else {
+      const w = canvasToWorld(cx, cy);
+      const hit = hitTable(w.x, w.y);
+      if (hit !== dHighlight) { dHighlight = hit; drawDiagram(); }
+    }
+  });
+
+  canvas.addEventListener('mouseup', () => {
+    dDragging = null;
+    canvas.classList.remove('grabbing');
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    dDragging = null;
+    canvas.classList.remove('grabbing');
+    dHighlight = null;
+    drawDiagram();
+  });
+
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const delta = e.deltaY > 0 ? 0.9 : 1.11;
+    const newScale = Math.min(Math.max(dScale * delta, 0.25), 3);
+    dOffX = cx - (cx - dOffX) * (newScale / dScale);
+    dOffY = cy - (cy - dOffY) * (newScale / dScale);
+    dScale = newScale;
+    drawDiagram();
+  }, { passive: false });
+
+  window.addEventListener('resize', () => {
+    if (curView === 'diagram') { resizeCanvas(); drawDiagram(); }
+  });
+}
+
+function fitDiagram() {
+  const canvas = document.getElementById('diagramCanvas');
+  if (!canvas) return;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  TBLS.forEach(t => {
+    const p = dPos[t];
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x + TBL_W);
+    maxY = Math.max(maxY, p.y + tblHeight(t));
+  });
+  const pad = 40;
+  const W = canvas.width, H = canvas.height;
+  const scaleX = (W - pad*2) / (maxX - minX);
+  const scaleY = (H - pad*2) / (maxY - minY);
+  dScale = Math.min(scaleX, scaleY, 1.2);
+  dOffX = pad - minX * dScale;
+  dOffY = pad - minY * dScale;
+  drawDiagram();
+}
+
+function resetDiagram() {
+  TBLS.forEach(t => { dPos[t] = { ...LAYOUT[t] }; });
+  dScale = 1; dOffX = 40; dOffY = 20;
+  drawDiagram();
+}
+
+// ════════════════════════════════
+// THEME
+// ════════════════════════════════
+let dark = true;
+function toggleTheme() {
+  dark = !dark;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('themeBtn').textContent = dark ? '🌙' : '☀️';
+}
+
+// ENTER key
+document.getElementById('sqlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runQuery();
+});
+
+// ════════════════════════════════
+// INIT
+// ════════════════════════════════
+buildSidebar();
+renderTable(curTable, DB[curTable].rows);
+buildSugs(curTable);
+</script>
+</body>
+</html>
