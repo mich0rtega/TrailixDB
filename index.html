@@ -494,16 +494,24 @@ genres: {
 
 movies: {
   cols: [
-    {n:'id',t:'int',pk:1},{n:'title',t:'varchar'},{n:'type_id',t:'int'},
-    {n:'release_year',t:'int'},{n:'duration',t:'int'},{n:'description',t:'varchar'},
-    {n:'poster',t:'varchar'},{n:'rating',t:'decimal'},{n:'is_available',t:'boolean'},
-    {n:'created_by',t:'int',fk:'users.id'},{n:'updated_by',t:'int',fk:'users.id'},{n:'url',t:'varchar'}
+    {n:'id',t:'int',pk:1},
+    {n:'title',t:'varchar'},
+    {n:'type_id',t:'int'},
+    {n:'release_year',t:'int'},
+    {n:'duration',t:'int'},
+    {n:'description',t:'varchar'},
+    {n:'poster',t:'varchar'},
+    {n:'rating',t:'decimal'},
+    {n:'is_available',t:'boolean'},
+    {n:'created_by',t:'int',fk:'users.id'},
+    {n:'updated_by',t:'int',fk:'users.id'},
+    {n:'url',t:'varchar'}
   ],
   rows: [
-    {id:1,title:'Minions - Stuart & Dave',type_id:1,release_year:2015,duration:91,description:'Los traviesosos minions en una nueva aventura de Gru.',poster:'minions.jpg',rating:6.4,is_available:true,created_by:1,updated_by:1,url:'https://www.youtube.com/watch?v=yDsMZn3olFw'},
-    {id:2,title:'Avengers: Infinity War',type_id:1,release_year:2018,duration:149,description:'Los Vengadores se unen para detener a Thanos.',poster:'infinitywar.jpg',rating:8.4,is_available:true,created_by:1,updated_by:5,url:'https://www.youtube.com/watch?v=6ZfuNTqbHE8'},
-    {id:3,title:'Barbie',type_id:1,release_year:2023,duration:114,description:'Barbie y Ken viajan al mundo real.',poster:'barbie.jpg',rating:6.9,is_available:true,created_by:5,updated_by:5,url:'https://www.youtube.com/watch?v=pBk4NYhWNMM'},
-    {id:4,title:'El Conjuro',type_id:1,release_year:2013,duration:112,description:'Los Warren investigan una casa aterrorizada.',poster:'conjuro.jpg',rating:7.5,is_available:true,created_by:1,updated_by:1,url:'https://www.youtube.com/watch?v=wE59Ajd_v9M'},
+    {id:1, title:'Minions - Stuart & Dave', type_id:1, release_year:2015, duration:91,  description:'Los traviesos minions en una nueva aventura junto a Gru.', poster:'minions.jpg',      rating:6.4, is_available:true,  created_by:1, updated_by:1, url:'https://www.youtube.com/watch?v=yDsMZn3olFw'},
+    {id:2, title:'Avengers: Infinity War',  type_id:1, release_year:2018, duration:149, description:'Los Vengadores se unen para detener el plan de Thanos.',    poster:'infinitywar.jpg', rating:8.4, is_available:true,  created_by:1, updated_by:5, url:'https://www.youtube.com/watch?v=6ZfuNTqbHE8'},
+    {id:3, title:'Barbie',                  type_id:1, release_year:2023, duration:114, description:'Barbie y Ken abandonan Barbieland y viajan al mundo real.', poster:'barbie.jpg',      rating:6.9, is_available:true,  created_by:5, updated_by:5, url:'https://www.youtube.com/watch?v=pBk4NYhWNMM'},
+    {id:4, title:'El Conjuro',              type_id:1, release_year:2013, duration:112, description:'Los Warren investigan fenómenos sobrenaturales en una casa.',poster:'conjuro.jpg',    rating:7.5, is_available:true,  created_by:1, updated_by:1, url:'https://www.youtube.com/watch?v=wE59Ajd_v9M'},
   ]
 },
 
